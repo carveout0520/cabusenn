@@ -68,6 +68,12 @@ export function tiktokCallback(code: string, state: string) {
   });
 }
 
+export function tiktokDisconnect() {
+  return request<{ message: string }>('/auth/tiktok/disconnect', {
+    method: 'POST',
+  });
+}
+
 // Matches
 export function getMatches(params?: { scope?: string; q?: string; date_from?: string; date_to?: string }) {
   const qs = new URLSearchParams();

@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -10,6 +10,7 @@ export default function Header() {
     if (location.pathname.startsWith('/chat/')) return 'チャット';
     if (location.pathname === '/chat') return 'チャット';
     if (location.pathname === '/announcements') return 'お知らせ';
+    if (location.pathname === '/settings') return '設定';
     return 'カブ戦';
   };
 
@@ -33,23 +34,29 @@ export default function Header() {
         >
           🔔
         </button>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: 13, color: 'var(--text-secondary)',
-        }}>
-          <span>{user?.nickname}</span>
-          <button
-            onClick={logout}
-            style={{
-              fontSize: 12, color: 'var(--text-secondary)',
-              padding: '4px 8px',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-            }}
-          >
-            ログアウト
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/settings')}
+          title="設定"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 13, color: 'var(--text-secondary)',
+            padding: '4px 8px',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-full)',
+          }}
+        >
+          <span style={{
+            width: 24, height: 24, borderRadius: '50%',
+            background: user?.avatar_url
+              ? `url(${user.avatar_url}) center/cover`
+              : 'linear-gradient(135deg, var(--primary), var(--accent))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, color: 'white', overflow: 'hidden',
+          }}>
+            {!user?.avatar_url && user?.nickname?.charAt(0)}
+          </span>
+          {user?.nickname}
+        </button>
       </div>
     </header>
   );

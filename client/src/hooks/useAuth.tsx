@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (inviteId: string) => Promise<void>;
   loginWithTikTok: () => Promise<void>;
   handleTikTokCallback: (code: string, state: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
   logout: () => void;
 }
 
@@ -101,6 +102,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await getMe();
+      setUser(res.user);
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -108,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, authConfig, login, loginWithTikTok, handleTikTokCallback, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, authConfig, login, loginWithTikTok, handleTikTokCallback, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

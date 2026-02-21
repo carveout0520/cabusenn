@@ -22,6 +22,7 @@ export function getDb(): Database.Database {
 export function initDb(): void {
   const d = getDb();
 
+  // Base schema (v0)
   d.exec(`
     CREATE TABLE IF NOT EXISTS users (
       user_id TEXT PRIMARY KEY,
@@ -119,6 +120,67 @@ export function initDb(): void {
     CREATE INDEX IF NOT EXISTS idx_availability_match ON availability(match_id);
     CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
   `);
+
+  // Run migrations
+  runMigrations(d);
+}
+
+// ============================================================
+// Migration System
+// ============================================================
+// Uses SQLite user_version pragma to track schema version.
+// Each migration is run exactly once, in order.
+
+interface Migration {
+  version: number;
+  description: string;
+  up: (db: Database.Database) => void;
+}
+
+const migrations: Migration[] = [
+  {
+    version: 1,
+    description: 'Add TikTok OAuth columns to users (idempotent)',
+    up: (d) => {
+      // These columns are now in the base schema, but for existing DBs
+      // that were created before TikTok integration, add them if missing.
+      const cols = d.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+      const colNames = new Set(cols.map(c => c.name));
+      if (!colNames.has('tiktok_open_id')) {
+        d.exec('ALTER TABLE users ADD COLUMN tiktok_open_id TEXT UNIQUE');
+      }
+      if (!colNames.has('tiktok_union_id')) {
+        d.exec('ALTER TABLE users ADD COLUMN tiktok_union_id TEXT');
+      }
+      if (!colNames.has('tiktok_access_token')) {
+        d.exec('ALTER TABLE users ADD COLUMN tiktok_access_token TEXT');
+      }
+      if (!colNames.has('tiktok_refresh_token')) {
+        d.exec('ALTER TABLE users ADD COLUMN tiktok_refresh_token TEXT');
+      }
+      if (!colNames.has('tiktok_token_expires_at')) {
+        d.exec('ALTER TABLE users ADD COLUMN tiktok_token_expires_at TEXT');
+      }
+    },
+  },
+  // Add future migrations here with incrementing version numbers
+];
+
+function runMigrations(d: Database.Database): void {
+  const currentVersion = (d.pragma('user_version', { simple: true }) as number) || 0;
+
+  const pending = migrations.filter(m => m.version > currentVersion);
+  if (pending.length === 0) return;
+
+  for (const migration of pending) {
+    console.log(`Running migration v${migration.version}: ${migration.description}`);
+    d.transaction(() => {
+      migration.up(d);
+      d.pragma(`user_version = ${migration.version}`);
+    })();
+  }
+
+  console.log(`Migrations complete. Schema version: ${pending[pending.length - 1].version}`);
 }
 
 export function closeDb(): void {

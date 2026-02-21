@@ -18,7 +18,10 @@ export default function ChatRoomPage() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [overlappingSlots, setOverlappingSlots] = useState<string[]>([]);
+  const [hasOlderMessages, setHasOlderMessages] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const opponent = match
     ? (match.player_a_user_id === user!.user_id ? match.player_b : match.player_a)
@@ -28,7 +31,10 @@ export default function ChatRoomPage() {
   useEffect(() => {
     if (!matchId) return;
     getMatch(matchId).then(res => setMatch(res.match)).catch(console.error);
-    getMessages(matchId).then(res => setMessages(res.messages)).catch(console.error);
+    getMessages(matchId).then(res => {
+      setMessages(res.messages);
+      setHasOlderMessages(res.messages.length >= 50);
+    }).catch(console.error);
     getAvailability(matchId).then(res => {
       setOverlappingSlots(res.overlapping_slots);
     }).catch(console.error);
@@ -48,13 +54,38 @@ export default function ChatRoomPage() {
         setMatch(prev => prev ? { ...prev, status: 'confirmed', confirmed_time_start: d.decided_time } : prev);
       }
     });
-    return () => { unsub1(); unsub2(); };
+    const unsub3 = subscribeWs('availability_updated', (data) => {
+      const d = data as { match_id: string; overlapping_slots: string[] };
+      if (d.match_id === matchId) {
+        setOverlappingSlots(d.overlapping_slots);
+      }
+    });
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [matchId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!matchId || !messages.length || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const oldestMsg = messages[0];
+      const res = await getMessages(matchId, oldestMsg.created_at);
+      if (res.messages.length === 0) {
+        setHasOlderMessages(false);
+      } else {
+        setMessages(prev => [...res.messages, ...prev]);
+        setHasOlderMessages(res.messages.length >= 50);
+      }
+    } catch (err) {
+      console.error('Failed to load older messages:', err);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [matchId, messages, loadingOlder]);
 
   const handleSend = useCallback(async () => {
     if (!inputText.trim() || !matchId) return;
@@ -160,7 +191,24 @@ export default function ChatRoomPage() {
       )}
 
       {/* Messages */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
+      <div ref={messagesContainerRef} style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
+        {hasOlderMessages && messages.length > 0 && (
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <button
+              onClick={loadOlderMessages}
+              disabled={loadingOlder}
+              style={{
+                fontSize: 12, color: 'var(--primary)',
+                padding: '6px 16px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--bg-card)',
+              }}
+            >
+              {loadingOlder ? '読み込み中...' : '過去のメッセージを読み込む'}
+            </button>
+          </div>
+        )}
         {messages.map(msg => (
           <MessageBubble key={msg.message_id} message={msg} isOwn={msg.sender_user_id === user!.user_id} />
         ))}

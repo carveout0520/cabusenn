@@ -6,7 +6,7 @@ import multer from 'multer';
 import { getDb } from '../models/database.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { logAudit } from '../services/audit.js';
-import { broadcastToMatch } from '../services/websocket.js';
+import { broadcastToMatch, broadcastToUser, broadcastToAll } from '../services/websocket.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -228,6 +228,131 @@ router.post('/users', (req: Request, res: Response) => {
   res.status(201).json({ user });
 });
 
+// PATCH /admin/users/:user_id
+router.patch('/users/:user_id', (req: Request, res: Response) => {
+  const db = getDb();
+  const { user_id } = req.params;
+  const adminId = req.user!.user_id;
+  const { nickname, tiktok_username, role, avatar_url } = req.body;
+
+  const existing = db.prepare('SELECT * FROM users WHERE user_id = ?').get(user_id);
+  if (!existing) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const updates: string[] = [];
+  const params: unknown[] = [];
+
+  if (nickname !== undefined) {
+    updates.push('nickname = ?');
+    params.push(nickname);
+  }
+  if (tiktok_username !== undefined) {
+    updates.push('tiktok_username = ?');
+    params.push(tiktok_username || null);
+  }
+  if (role !== undefined) {
+    if (!['liver', 'admin'].includes(role)) {
+      res.status(400).json({ error: 'Invalid role' });
+      return;
+    }
+    updates.push('role = ?');
+    params.push(role);
+  }
+  if (avatar_url !== undefined) {
+    updates.push('avatar_url = ?');
+    params.push(avatar_url || null);
+  }
+
+  if (updates.length === 0) {
+    res.status(400).json({ error: 'No fields to update' });
+    return;
+  }
+
+  updates.push("updated_at = datetime('now')");
+  params.push(user_id);
+
+  db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`).run(...params);
+
+  logAudit(adminId, 'update_user', 'user', user_id, JSON.stringify(req.body));
+
+  const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(user_id);
+  res.json({ user });
+});
+
+// DELETE /admin/users/:user_id
+router.delete('/users/:user_id', (req: Request, res: Response) => {
+  const db = getDb();
+  const { user_id } = req.params;
+  const adminId = req.user!.user_id;
+
+  if (user_id === adminId) {
+    res.status(400).json({ error: 'Cannot delete your own account' });
+    return;
+  }
+
+  const existing = db.prepare('SELECT * FROM users WHERE user_id = ?').get(user_id);
+  if (!existing) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  // Check for active matches
+  const activeMatches = db.prepare(
+    "SELECT COUNT(*) as count FROM matches WHERE (player_a_user_id = ? OR player_b_user_id = ?) AND status IN ('pending','scheduling','confirmed')"
+  ).get(user_id, user_id) as { count: number };
+
+  if (activeMatches.count > 0) {
+    res.status(409).json({ error: `User has ${activeMatches.count} active matches. Cancel them first.` });
+    return;
+  }
+
+  db.prepare('DELETE FROM users WHERE user_id = ?').run(user_id);
+
+  logAudit(adminId, 'delete_user', 'user', user_id, JSON.stringify({ nickname: (existing as Record<string, unknown>).nickname }));
+
+  res.json({ message: 'User deleted' });
+});
+
+// ============================================================
+// Dashboard Stats
+// ============================================================
+
+// GET /admin/dashboard
+router.get('/dashboard', (_req: Request, res: Response) => {
+  const db = getDb();
+
+  const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count;
+  const matchCount = (db.prepare('SELECT COUNT(*) as count FROM matches').get() as { count: number }).count;
+
+  const matchesByStatus = db.prepare(
+    "SELECT status, COUNT(*) as count FROM matches GROUP BY status"
+  ).all() as { status: string; count: number }[];
+
+  const upcomingMatches = db.prepare(
+    "SELECT COUNT(*) as count FROM matches WHERE event_date >= date('now') AND status IN ('pending','scheduling','confirmed')"
+  ).get() as { count: number };
+
+  const recentActivity = db.prepare(
+    "SELECT action, COUNT(*) as count FROM audit_logs WHERE created_at >= datetime('now', '-7 days') GROUP BY action ORDER BY count DESC LIMIT 10"
+  ).all() as { action: string; count: number }[];
+
+  const tiktokLinked = (db.prepare(
+    "SELECT COUNT(*) as count FROM users WHERE tiktok_open_id IS NOT NULL"
+  ).get() as { count: number }).count;
+
+  res.json({
+    users: { total: userCount, tiktok_linked: tiktokLinked },
+    matches: {
+      total: matchCount,
+      upcoming: upcomingMatches.count,
+      by_status: Object.fromEntries(matchesByStatus.map(r => [r.status, r.count])),
+    },
+    recent_activity: recentActivity,
+  });
+});
+
 // ============================================================
 // Results
 // ============================================================
@@ -302,6 +427,19 @@ router.post('/announcements', (req: Request, res: Response) => {
   `).run(announcementId, title, body, target_type || 'all', target_ids ? JSON.stringify(target_ids) : null, adminId);
 
   logAudit(adminId, 'create_announcement', 'announcement', announcementId, title);
+
+  // Broadcast announcement to targeted users
+  const announcementData = {
+    type: 'new_announcement',
+    data: { announcement_id: announcementId, title, target_type: target_type || 'all' },
+  };
+  if (target_type === 'users' && Array.isArray(target_ids)) {
+    for (const uid of target_ids) {
+      broadcastToUser(uid, announcementData);
+    }
+  } else {
+    broadcastToAll(announcementData);
+  }
 
   res.status(201).json({ message: 'Announcement created', announcement_id: announcementId });
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { adminLogin, setAdminToken, getAdminToken } from './services/api';
+import DashboardPage from './pages/DashboardPage';
 import MatchesPage from './pages/MatchesPage';
 import UsersPage from './pages/UsersPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
@@ -102,6 +103,7 @@ export default function App() {
   }
 
   const navItems = [
+    { path: '/dashboard', label: 'ダッシュボード', icon: '📊' },
     { path: '/matches', label: '対戦管理', icon: '⚔️' },
     { path: '/users', label: 'ユーザー', icon: '👤' },
     { path: '/announcements', label: 'お知らせ', icon: '📢' },
@@ -158,12 +160,13 @@ export default function App() {
       {/* Main Content */}
       <main style={{ flex: 1, overflow: 'auto', padding: 24 }}>
         <Routes>
-          <Route path="/" element={<Navigate to="/matches" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/matches" element={<MatchesPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/announcements" element={<AnnouncementsPage />} />
           <Route path="/audit" element={<AuditLogsPage />} />
-          <Route path="*" element={<Navigate to="/matches" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </div>

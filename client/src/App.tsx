@@ -6,6 +6,7 @@ import MatchesPage from './pages/MatchesPage';
 import ChatListPage from './pages/ChatListPage';
 import ChatRoomPage from './pages/ChatRoomPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
+import SettingsPage from './pages/SettingsPage';
 import TabBar from './components/TabBar';
 import Header from './components/Header';
 
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:matchId" element={<ChatRoomPage />} />
           <Route path="/announcements" element={<AnnouncementsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/auth/tiktok/callback" element={<Navigate to="/matches" replace />} />
           <Route path="*" element={<Navigate to="/matches" replace />} />
         </Routes>

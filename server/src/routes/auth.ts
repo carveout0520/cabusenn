@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../models/database.js';
-import { signToken } from '../middleware/auth.js';
+import { signToken, authenticate } from '../middleware/auth.js';
 import { isTikTokConfigured } from '../services/tiktok-config.js';
 import { generateAuthUrl, exchangeCodeForToken, fetchUserInfo, refreshAccessToken, revokeToken } from '../services/tiktok-oauth.js';
 import { logAudit } from '../services/audit.js';
@@ -47,14 +47,10 @@ router.post('/login', (req: Request, res: Response) => {
   res.json({ token, user: sanitizeUser(user) });
 });
 
-// GET /auth/me - Get current user info
-router.get('/me', (req: Request, res: Response) => {
-  if (!req.user) {
-    res.status(401).json({ error: 'Not authenticated' });
-    return;
-  }
+// GET /auth/me - Get current user info (protected)
+router.get('/me', authenticate, (req: Request, res: Response) => {
   const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id) as User | undefined;
+  const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user!.user_id) as User | undefined;
   if (!user) {
     res.status(404).json({ error: 'User not found' });
     return;
@@ -202,13 +198,9 @@ router.post('/tiktok/callback', async (req: Request, res: Response) => {
   }
 });
 
-// POST /auth/tiktok/refresh - Refresh TikTok access token
-router.post('/tiktok/refresh', async (req: Request, res: Response) => {
+// POST /auth/tiktok/refresh - Refresh TikTok access token (protected)
+router.post('/tiktok/refresh', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
 
     const db = getDb();
     const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id) as User | undefined;
@@ -242,13 +234,9 @@ router.post('/tiktok/refresh', async (req: Request, res: Response) => {
   }
 });
 
-// POST /auth/tiktok/disconnect - Revoke TikTok token and unlink account
-router.post('/tiktok/disconnect', async (req: Request, res: Response) => {
+// POST /auth/tiktok/disconnect - Revoke TikTok token and unlink account (protected)
+router.post('/tiktok/disconnect', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
 
     const db = getDb();
     const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id) as User | undefined;

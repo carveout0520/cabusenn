@@ -125,3 +125,14 @@ export function broadcastToUser(userId: string, message: unknown): void {
     }
   }
 }
+
+export function broadcastToAll(message: unknown): void {
+  const payload = JSON.stringify(message);
+  for (const [, userSockets] of clients) {
+    for (const ws of userSockets) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(payload);
+      }
+    }
+  }
+}

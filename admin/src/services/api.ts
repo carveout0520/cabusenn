@@ -59,6 +59,28 @@ export function createUser(data: { invite_id: string; nickname: string; tiktok_u
   });
 }
 
+export function updateUser(userId: string, data: { nickname?: string; tiktok_username?: string; role?: string; avatar_url?: string }) {
+  return request<{ user: unknown }>(`/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteUser(userId: string) {
+  return request(`/admin/users/${userId}`, { method: 'DELETE' });
+}
+
+// Dashboard
+export interface DashboardStats {
+  users: { total: number; tiktok_linked: number };
+  matches: { total: number; upcoming: number; by_status: Record<string, number> };
+  recent_activity: { action: string; count: number }[];
+}
+
+export function getDashboard() {
+  return request<DashboardStats>('/admin/dashboard');
+}
+
 // Matches
 export function getMatches(params?: Record<string, string>) {
   const qs = params ? '?' + new URLSearchParams(params).toString() : '';
@@ -105,7 +127,7 @@ export function getAnnouncements() {
   return request<{ announcements: unknown[] }>('/admin/announcements');
 }
 
-export function createAnnouncement(data: { title: string; body: string; target_type?: string }) {
+export function createAnnouncement(data: { title: string; body: string; target_type?: string; target_ids?: string[] }) {
   return request('/admin/announcements', {
     method: 'POST',
     body: JSON.stringify(data),

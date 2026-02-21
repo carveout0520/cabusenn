@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../models/database.js';
 import { authenticate } from '../middleware/auth.js';
 import { logAudit } from '../services/audit.js';
+import { broadcastToMatch } from '../services/websocket.js';
 
 const router = Router({ mergeParams: true });
 
@@ -104,6 +105,17 @@ router.post('/', authenticate, (req: Request, res: Response) => {
     const slotsB = JSON.parse(allAvail[1].candidate_slots as string) as string[];
     overlapping = slotsB.filter((s: string) => slotsA.has(s));
   }
+
+  // Broadcast availability update to the other player
+  broadcastToMatch(match_id, {
+    type: 'availability_updated',
+    data: {
+      match_id,
+      user_id: userId,
+      both_submitted: allAvail.length === 2,
+      overlapping_slots: overlapping,
+    },
+  });
 
   res.json({
     message: 'Availability submitted',

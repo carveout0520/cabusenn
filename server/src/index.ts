@@ -30,11 +30,10 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Public auth routes (no authentication needed for login)
+// Auth routes (login/TikTok routes are public; /me applies authenticate internally)
 app.use('/auth', authRouter);
 
-// Protected routes - need auth middleware applied within routers or here
-app.use('/auth', authenticate, authRouter);  // /auth/me needs auth
+// Protected routes
 app.use('/matches', matchesRouter);
 app.use('/matches/:match_id/availability', availabilityRouter);
 app.use('/matches/:match_id/messages', chatRouter);
