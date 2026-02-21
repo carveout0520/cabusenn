@@ -1,0 +1,125 @@
+/* Admin Panel Styles */
+:root {
+  --admin-primary: #2563eb;
+  --admin-bg: #f8fafc;
+  --admin-card: #ffffff;
+  --admin-sidebar: #1e293b;
+  --admin-text: #1e293b;
+  --admin-text-secondary: #64748b;
+  --admin-border: #e2e8f0;
+  --admin-radius: 8px;
+  --admin-success: #10b981;
+  --admin-warning: #f59e0b;
+  --admin-danger: #ef4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+#root {
+  height: 100%;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  outline: none;
+  color: var(--admin-text);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 13px;
+}
+
+th {
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--admin-radius);
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.admin-btn-primary {
+  background: var(--admin-primary);
+  color: white;
+}
+.admin-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.admin-btn-danger {
+  background: var(--admin-danger);
+  color: white;
+}
+.admin-btn-danger:hover {
+  background: #dc2626;
+}
+
+.admin-btn-outline {
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  background: white;
+}
+.admin-btn-outline:hover {
+  background: var(--admin-bg);
+}
+
+.admin-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 20px;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
