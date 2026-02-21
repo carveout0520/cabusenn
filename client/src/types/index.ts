@@ -8,7 +8,14 @@ export interface User {
   nickname: string;
   avatar_url: string | null;
   tiktok_username: string | null;
+  tiktok_open_id: string | null;
+  tiktok_union_id: string | null;
   role: UserRole;
+}
+
+export interface AuthConfig {
+  tiktok_enabled: boolean;
+  invite_enabled: boolean;
 }
 
 export interface PlayerInfo {

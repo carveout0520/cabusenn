@@ -10,6 +10,11 @@ export interface User {
   nickname: string;
   avatar_url: string | null;
   tiktok_username: string | null;
+  tiktok_open_id: string | null;
+  tiktok_union_id: string | null;
+  tiktok_access_token: string | null;
+  tiktok_refresh_token: string | null;
+  tiktok_token_expires_at: string | null;
   role: UserRole;
   created_at: string;
   updated_at: string;

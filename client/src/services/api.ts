@@ -50,6 +50,24 @@ export function getMe() {
   return request<{ user: import('../types').User }>('/auth/me');
 }
 
+export function getAuthConfig() {
+  return request<import('../types').AuthConfig>('/auth/config');
+}
+
+// TikTok OAuth
+export function tiktokStart() {
+  return request<{ authorization_url: string; state: string }>('/auth/tiktok/start', {
+    method: 'POST',
+  });
+}
+
+export function tiktokCallback(code: string, state: string) {
+  return request<{ token: string; user: import('../types').User }>('/auth/tiktok/callback', {
+    method: 'POST',
+    body: JSON.stringify({ code, state }),
+  });
+}
+
 // Matches
 export function getMatches(params?: { scope?: string; q?: string; date_from?: string; date_to?: string }) {
   const qs = new URLSearchParams();

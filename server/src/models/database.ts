@@ -29,6 +29,11 @@ export function initDb(): void {
       nickname TEXT NOT NULL,
       avatar_url TEXT,
       tiktok_username TEXT,
+      tiktok_open_id TEXT UNIQUE,
+      tiktok_union_id TEXT,
+      tiktok_access_token TEXT,
+      tiktok_refresh_token TEXT,
+      tiktok_token_expires_at TEXT,
       role TEXT NOT NULL DEFAULT 'liver' CHECK(role IN ('liver', 'admin')),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
+import TikTokCallbackPage from './pages/TikTokCallbackPage';
 import MatchesPage from './pages/MatchesPage';
 import ChatListPage from './pages/ChatListPage';
 import ChatRoomPage from './pages/ChatRoomPage';
@@ -22,8 +23,15 @@ export default function App() {
     );
   }
 
+  // TikTok OAuth callback route must be accessible without auth
+  // (user is redirected here from TikTok before being authenticated)
   if (!user) {
-    return <LoginPage />;
+    return (
+      <Routes>
+        <Route path="/auth/tiktok/callback" element={<TikTokCallbackPage />} />
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+    );
   }
 
   return (
@@ -36,6 +44,7 @@ export default function App() {
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:matchId" element={<ChatRoomPage />} />
           <Route path="/announcements" element={<AnnouncementsPage />} />
+          <Route path="/auth/tiktok/callback" element={<Navigate to="/matches" replace />} />
           <Route path="*" element={<Navigate to="/matches" replace />} />
         </Routes>
       </main>
