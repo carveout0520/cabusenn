@@ -9,3 +9,4 @@ server/data/
 *.log
 coverage/
 .vite/
+*.tsbuildinfo
