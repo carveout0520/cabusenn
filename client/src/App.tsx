@@ -3,12 +3,14 @@ import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
 import TikTokCallbackPage from './pages/TikTokCallbackPage';
 import MatchesPage from './pages/MatchesPage';
+import ResultsPage from './pages/ResultsPage';
 import ChatListPage from './pages/ChatListPage';
 import ChatRoomPage from './pages/ChatRoomPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import SettingsPage from './pages/SettingsPage';
 import TabBar from './components/TabBar';
 import Header from './components/Header';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -36,21 +38,24 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Header />
-      <main style={{ flex: 1, overflow: 'auto', paddingBottom: 'var(--tab-height)' }}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/matches" replace />} />
-          <Route path="/matches" element={<MatchesPage />} />
-          <Route path="/chat" element={<ChatListPage />} />
-          <Route path="/chat/:matchId" element={<ChatRoomPage />} />
-          <Route path="/announcements" element={<AnnouncementsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/auth/tiktok/callback" element={<Navigate to="/matches" replace />} />
-          <Route path="*" element={<Navigate to="/matches" replace />} />
-        </Routes>
-      </main>
-      <TabBar />
-    </div>
+    <ErrorBoundary>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Header />
+        <main style={{ flex: 1, overflow: 'auto', paddingBottom: 'var(--tab-height)' }}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/matches" replace />} />
+            <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/results" element={<ResultsPage />} />
+            <Route path="/chat" element={<ChatListPage />} />
+            <Route path="/chat/:matchId" element={<ChatRoomPage />} />
+            <Route path="/announcements" element={<AnnouncementsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/auth/tiktok/callback" element={<Navigate to="/matches" replace />} />
+            <Route path="*" element={<Navigate to="/matches" replace />} />
+          </Routes>
+        </main>
+        <TabBar />
+      </div>
+    </ErrorBoundary>
   );
 }

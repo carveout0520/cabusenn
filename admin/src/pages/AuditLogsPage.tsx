@@ -6,18 +6,43 @@ export default function AuditLogsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [actionTypes, setActionTypes] = useState<string[]>([]);
   const limit = 50;
+
+  // Filters
+  const [filterAction, setFilterAction] = useState('');
+  const [filterActor, setFilterActor] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    getAuditLogs({ limit, offset })
+    getAuditLogs({
+      limit,
+      offset,
+      action: filterAction || undefined,
+      actor: filterActor || undefined,
+      date_from: filterDateFrom || undefined,
+      date_to: filterDateTo || undefined,
+    })
       .then(res => {
         setLogs(res.logs as Record<string, unknown>[]);
         setTotal(res.total);
+        if (res.action_types) setActionTypes(res.action_types);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [offset]);
+  }, [offset, filterAction, filterActor, filterDateFrom, filterDateTo]);
+
+  const handleReset = () => {
+    setFilterAction('');
+    setFilterActor('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setOffset(0);
+  };
+
+  const hasFilters = filterAction || filterActor || filterDateFrom || filterDateTo;
 
   return (
     <div>
@@ -28,11 +53,81 @@ export default function AuditLogsPage() {
         </span>
       </div>
 
+      {/* Filter Controls */}
+      <div className="admin-card" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+          <div style={{ minWidth: 160 }}>
+            <label style={{ display: 'block', fontSize: 11, color: 'var(--admin-text-secondary)', marginBottom: 4 }}>
+              アクション
+            </label>
+            <select
+              value={filterAction}
+              onChange={e => { setFilterAction(e.target.value); setOffset(0); }}
+              style={{ width: '100%', padding: '6px 8px', fontSize: 13, borderRadius: 6, border: '1px solid #d1d5db' }}
+            >
+              <option value="">すべて</option>
+              {actionTypes.map(a => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ minWidth: 160 }}>
+            <label style={{ display: 'block', fontSize: 11, color: 'var(--admin-text-secondary)', marginBottom: 4 }}>
+              操作者ID
+            </label>
+            <input
+              type="text"
+              value={filterActor}
+              onChange={e => { setFilterActor(e.target.value); setOffset(0); }}
+              placeholder="IDの一部を入力"
+              style={{ width: '100%', padding: '6px 8px', fontSize: 13, borderRadius: 6, border: '1px solid #d1d5db' }}
+            />
+          </div>
+
+          <div style={{ minWidth: 140 }}>
+            <label style={{ display: 'block', fontSize: 11, color: 'var(--admin-text-secondary)', marginBottom: 4 }}>
+              開始日
+            </label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={e => { setFilterDateFrom(e.target.value); setOffset(0); }}
+              style={{ width: '100%', padding: '6px 8px', fontSize: 13, borderRadius: 6, border: '1px solid #d1d5db' }}
+            />
+          </div>
+
+          <div style={{ minWidth: 140 }}>
+            <label style={{ display: 'block', fontSize: 11, color: 'var(--admin-text-secondary)', marginBottom: 4 }}>
+              終了日
+            </label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={e => { setFilterDateTo(e.target.value); setOffset(0); }}
+              style={{ width: '100%', padding: '6px 8px', fontSize: 13, borderRadius: 6, border: '1px solid #d1d5db' }}
+            />
+          </div>
+
+          {hasFilters && (
+            <button
+              onClick={handleReset}
+              className="admin-btn admin-btn-outline"
+              style={{ fontSize: 12 }}
+            >
+              リセット
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="admin-card" style={{ padding: 0, overflow: 'auto' }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--admin-text-secondary)' }}>読み込み中...</div>
         ) : logs.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--admin-text-secondary)' }}>ログはありません</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--admin-text-secondary)' }}>
+            {hasFilters ? '条件に一致するログはありません' : 'ログはありません'}
+          </div>
         ) : (
           <table>
             <thead>

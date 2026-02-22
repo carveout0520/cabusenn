@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const tabs = [
   { path: '/matches', label: '対戦表', icon: '⚔️' },
+  { path: '/results', label: '戦績', icon: '🏆' },
   { path: '/chat', label: 'チャット', icon: '💬' },
 ];
 

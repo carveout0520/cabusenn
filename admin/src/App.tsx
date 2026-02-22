@@ -6,6 +6,7 @@ import MatchesPage from './pages/MatchesPage';
 import UsersPage from './pages/UsersPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 interface AdminUser {
   user_id: string;
@@ -111,6 +112,7 @@ export default function App() {
   ];
 
   return (
+    <ErrorBoundary>
     <div style={{ display: 'flex', height: '100%' }}>
       {/* Sidebar */}
       <aside style={{
@@ -170,5 +172,6 @@ export default function App() {
         </Routes>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

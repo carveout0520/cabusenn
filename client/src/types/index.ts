@@ -64,6 +64,27 @@ export interface Availability {
   submitted_at: string;
 }
 
+export interface LeaderboardEntry {
+  user_id: string;
+  nickname: string;
+  avatar_url: string | null;
+  tiktok_username: string | null;
+  wins: number;
+  losses: number;
+  total_matches: number;
+}
+
+export interface ResultHistory {
+  match_id: string;
+  event_date: string;
+  event_round: number;
+  player_a: PlayerInfo;
+  player_b: PlayerInfo;
+  winner_user_id: string | null;
+  confirmed_time_start: string | null;
+  confirmed_time_end: string | null;
+}
+
 export interface Announcement {
   announcement_id: string;
   title: string;

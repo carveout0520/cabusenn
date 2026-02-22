@@ -10,6 +10,7 @@ import availabilityRouter from './routes/availability.js';
 import chatRouter from './routes/chat.js';
 import announcementsRouter from './routes/announcements.js';
 import adminRouter from './routes/admin.js';
+import resultsRouter from './routes/results.js';
 
 const PORT = parseInt(process.env.PORT || '3001');
 const app = express();
@@ -39,6 +40,7 @@ app.use('/matches/:match_id/availability', availabilityRouter);
 app.use('/matches/:match_id/messages', chatRouter);
 app.use('/matches/:match_id', chatRouter);  // For /schedule/approve
 app.use('/announcements', announcementsRouter);
+app.use('/results', resultsRouter);
 app.use('/admin', adminRouter);
 
 // Create HTTP server and attach WebSocket

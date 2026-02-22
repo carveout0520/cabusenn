@@ -122,6 +122,18 @@ export function approveSchedule(matchId: string, decidedTime: string) {
   });
 }
 
+// Results / Leaderboard
+export function getLeaderboard() {
+  return request<{ leaderboard: import('../types').LeaderboardEntry[] }>('/results/leaderboard');
+}
+
+export function getResultsHistory(params?: { limit?: number; offset?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.offset) qs.set('offset', String(params.offset));
+  return request<{ history: import('../types').ResultHistory[]; total: number }>(`/results/history?${qs.toString()}`);
+}
+
 // Announcements
 export function getAnnouncements() {
   return request<{ announcements: import('../types').Announcement[] }>('/announcements');

@@ -203,7 +203,7 @@ router.post('/tiktok/refresh', authenticate, async (req: Request, res: Response)
   try {
 
     const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id) as User | undefined;
+    const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user!.user_id) as User | undefined;
 
     if (!user || !user.tiktok_refresh_token) {
       res.status(400).json({ error: 'No TikTok account linked' });
@@ -239,7 +239,7 @@ router.post('/tiktok/disconnect', authenticate, async (req: Request, res: Respon
   try {
 
     const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id) as User | undefined;
+    const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user!.user_id) as User | undefined;
 
     if (!user || !user.tiktok_access_token) {
       res.status(400).json({ error: 'No TikTok account linked' });

@@ -171,7 +171,13 @@ router.delete('/matches/:match_id', (req: Request, res: Response) => {
   const { match_id } = req.params;
   const adminId = req.user!.user_id;
 
-  const match = db.prepare('SELECT * FROM matches WHERE match_id = ?').get(match_id);
+  const match = db.prepare(`
+    SELECT m.*, ua.nickname as pa_nickname, ub.nickname as pb_nickname
+    FROM matches m
+    JOIN users ua ON m.player_a_user_id = ua.user_id
+    JOIN users ub ON m.player_b_user_id = ub.user_id
+    WHERE m.match_id = ?
+  `).get(match_id) as Record<string, unknown> | undefined;
   if (!match) {
     res.status(404).json({ error: 'Match not found' });
     return;
@@ -183,7 +189,11 @@ router.delete('/matches/:match_id', (req: Request, res: Response) => {
   db.prepare('DELETE FROM results WHERE match_id = ?').run(match_id);
   db.prepare('DELETE FROM matches WHERE match_id = ?').run(match_id);
 
-  logAudit(adminId, 'delete_match', 'match', match_id, '');
+  logAudit(adminId, 'delete_match', 'match', match_id, JSON.stringify({
+    event_date: match.event_date,
+    player_a: match.pa_nickname,
+    player_b: match.pb_nickname,
+  }));
 
   res.json({ message: 'Match deleted' });
 });
@@ -451,14 +461,43 @@ router.post('/announcements', (req: Request, res: Response) => {
 // GET /admin/audit_logs
 router.get('/audit_logs', (req: Request, res: Response) => {
   const db = getDb();
-  const { limit: limitStr, offset: offsetStr } = req.query;
+  const { limit: limitStr, offset: offsetStr, action, target_type, actor, date_from, date_to } = req.query;
   const limit = Math.min(parseInt(limitStr as string) || 50, 200);
   const offset = parseInt(offsetStr as string) || 0;
 
-  const logs = db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
-  const total = (db.prepare('SELECT COUNT(*) as count FROM audit_logs').get() as { count: number }).count;
+  const conditions: string[] = [];
+  const params: unknown[] = [];
 
-  res.json({ logs, total, limit, offset });
+  if (action && typeof action === 'string') {
+    conditions.push('action = ?');
+    params.push(action);
+  }
+  if (target_type && typeof target_type === 'string') {
+    conditions.push('target_type = ?');
+    params.push(target_type);
+  }
+  if (actor && typeof actor === 'string') {
+    conditions.push('actor_user_id LIKE ?');
+    params.push(`%${actor}%`);
+  }
+  if (date_from && typeof date_from === 'string') {
+    conditions.push('created_at >= ?');
+    params.push(date_from);
+  }
+  if (date_to && typeof date_to === 'string') {
+    conditions.push('created_at <= ?');
+    params.push(date_to + 'T23:59:59');
+  }
+
+  const where = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
+
+  const logs = db.prepare(`SELECT * FROM audit_logs${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+  const total = (db.prepare(`SELECT COUNT(*) as count FROM audit_logs${where}`).get(...params) as { count: number }).count;
+
+  // Return distinct action types for filter dropdown
+  const actionTypes = db.prepare('SELECT DISTINCT action FROM audit_logs ORDER BY action').all() as { action: string }[];
+
+  res.json({ logs, total, limit, offset, action_types: actionTypes.map(a => a.action) });
 });
 
 export default router;

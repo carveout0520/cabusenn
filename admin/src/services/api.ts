@@ -135,7 +135,13 @@ export function createAnnouncement(data: { title: string; body: string; target_t
 }
 
 // Audit Logs
-export function getAuditLogs(params?: { limit?: number; offset?: number }) {
-  const qs = params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '';
-  return request<{ logs: unknown[]; total: number }>(`/admin/audit_logs${qs}`);
+export function getAuditLogs(params?: { limit?: number; offset?: number; action?: string; target_type?: string; actor?: string; date_from?: string; date_to?: string }) {
+  const qs = new URLSearchParams();
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== '') qs.set(k, String(v));
+    }
+  }
+  const query = qs.toString();
+  return request<{ logs: unknown[]; total: number; action_types: string[] }>(`/admin/audit_logs${query ? '?' + query : ''}`);
 }
